@@ -1,0 +1,399 @@
+// pages/server/[id]/antilink.js
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
+import { useSession } from "next-auth/react";
+import Navbar from '@/components/Navbar';
+import { 
+  FaArrowLeft, 
+  FaDiscord,
+  FaLink, 
+  FaPlus, 
+  FaTrash, 
+  FaSave, 
+  FaSpinner,
+  FaCheckCircle,
+  FaExclamationTriangle
+} from 'react-icons/fa';
+
+export default function AntiLinkPage() {
+  const router = useRouter();
+  const { id: guildId } = router.query;
+  const { data: session, status } = useSession();
+
+  // Estados de Configuração
+  const [guild, setGuild] = useState(null);
+  const [enabled, setEnabled] = useState(false);
+  const [allowMedia, setAllowMedia] = useState(false);
+  const [allowSocials, setAllowSocials] = useState(false);
+  const [allowedDomains, setAllowedDomains] = useState([]);
+  const [newDomain, setNewDomain] = useState('');
+
+  // Estados de Controle de UI
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+
+  useEffect(() => {
+    if (!guildId || status === "loading") return;
+
+    if (status === "unauthenticated") {
+      router.push("/servers");
+      return;
+    }
+
+    async function fetchData() {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // 1. Buscar informações do servidor para o Header do topo
+        const guildsResponse = await fetch(`/api/user-guilds`);
+        const guildsData = await guildsResponse.json();
+        
+        if (!guildsResponse.ok || !guildsData.success) {
+          throw new Error(guildsData.error || 'Erro ao buscar servidor');
+        }
+        
+        const foundGuild = guildsData.guilds?.find(g => g.id === guildId);
+        if (!foundGuild) throw new Error('Servidor não encontrado');
+        setGuild(foundGuild);
+
+        // 2. Buscar configuração atual do Anti-Link
+        const response = await fetch(`/api/guild/${guildId}/antilink`);
+        if (!response.ok) throw new Error('Erro ao carregar dados do Anti-Link.');
+        
+        const data = await response.json();
+        setEnabled(data.enabled);
+        setAllowMedia(data.allowMedia);
+        setAllowSocials(data.allowSocials);
+        setAllowedDomains(data.allowedDomains || []);
+      } catch (err) {
+        console.error('Erro ao carregar dados:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (session?.accessToken) {
+      fetchData();
+    }
+  }, [guildId, session, status, router]);
+
+  // Salvar configurações
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      setSuccess(null);
+
+      const response = await fetch(`/api/guild/${guildId}/antilink`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enabled,
+          allowMedia,
+          allowSocials,
+          allowedDomains
+        })
+      });
+
+      if (!response.ok) throw new Error('Falha ao salvar as configurações.');
+      
+      setSuccess('Configurações salvas com sucesso!');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error('Erro ao salvar:', err);
+      setError(err.message);
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Adiciona domínio na Whitelist
+  const handleAddDomain = (e) => {
+    e.preventDefault();
+    let domain = newDomain.trim().toLowerCase();
+    if (!domain) return;
+    
+    domain = domain.replace(/^(https?:\/\/)?(www\.)?/, '');
+
+    if (allowedDomains.includes(domain)) {
+      setNewDomain('');
+      return;
+    }
+
+    setAllowedDomains([...allowedDomains, domain]);
+    setNewDomain('');
+  };
+
+  // Remove domínio da Whitelist
+  const handleRemoveDomain = (domainToRemove) => {
+    setAllowedDomains(allowedDomains.filter(domain => domain !== domainToRemove));
+  };
+
+  const getIconUrl = () => {
+    if (!guild?.icon) return null;
+    return `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128`;
+  };
+
+  if (status === "loading" || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-900 to-green-900">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-screen pt-20">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-green-300">Carregando módulo Anti-Link...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !guild) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-900 to-green-900">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-screen pt-20 px-4">
+          <div className="text-center max-w-md">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 mb-4">
+              <FaExclamationTriangle size={32} className="text-red-400" />
+            </div>
+            <h2 className="text-xl font-bold text-green-300 mb-2">Erro</h2>
+            <p className="text-green-400 mb-6">{error}</p>
+            <button
+              onClick={() => router.push(`/server/${guildId}`)}
+              className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+            >
+              Voltar ao Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const iconUrl = getIconUrl();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-900 to-green-900">
+      <Navbar />
+      
+      <div className="relative max-w-4xl mx-auto px-6 py-8 pt-28">
+        
+        {/* Botão Voltar */}
+        <button
+          onClick={() => router.push(`/server/${guildId}`)}
+          className="group flex items-center gap-2 px-4 py-2 mb-8 rounded-lg bg-black/50 border border-green-500/30 hover:bg-green-500/10 transition-all duration-300 text-green-400 hover:text-green-300"
+        >
+          <FaArrowLeft size={14} />
+          <span className="text-sm font-medium">Voltar ao Dashboard</span>
+        </button>
+
+        {/* Header do Servidor */}
+        <div className="bg-black/50 backdrop-blur-sm border border-green-500/30 rounded-2xl p-6 mb-8">
+          <div className="flex items-center gap-4">
+            {iconUrl ? (
+              <img
+                src={iconUrl}
+                alt={guild?.name}
+                className="w-16 h-16 rounded-2xl object-cover ring-2 ring-green-500/30"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-700 flex items-center justify-center">
+                <FaDiscord size={32} className="text-white" />
+              </div>
+            )}
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-green-300 mb-1">Proteção Anti-Link</h1>
+              <p className="text-green-400 text-sm">
+                Controle o envio de links externos no chat de {guild?.name}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Mensagens de feedback */}
+        {success && (
+          <div className="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/30 flex items-center gap-3 animate-fade-in">
+            <FaCheckCircle className="text-green-400" size={20} />
+            <span className="text-green-400">{success}</span>
+          </div>
+        )}
+        
+        {error && (
+          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3 animate-fade-in">
+            <FaExclamationTriangle className="text-red-400" size={20} />
+            <span className="text-red-400">{error}</span>
+          </div>
+        )}
+
+        {/* Caixa de Configurações Principais */}
+        <div className="space-y-6">
+          
+          {/* Toggle Geral */}
+          <div className="bg-black/50 backdrop-blur-sm border border-green-500/30 rounded-2xl p-6 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-green-300">Ativar Anti-Link</h3>
+              <p className="text-green-400 text-sm max-w-md">Bloqueia globalmente quaisquer mensagens de texto que contenham URLs.</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={enabled} 
+                onChange={(e) => setEnabled(e.target.checked)} 
+                className="sr-only peer"
+              />
+              <div className="w-14 h-7 bg-black/40 border border-green-500/30 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-green-700 peer-checked:after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500" />
+            </label>
+          </div>
+
+          {/* Subopções (Ajustado opacidade conforme o 'enabled') */}
+          <div className={`space-y-6 transition-all duration-300 ${enabled ? 'opacity-100 pointer-events-auto' : 'opacity-40 pointer-events-none'}`}>
+            
+            {/* Grid de Regras Dinâmicas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Permitir Mídias */}
+              <div className="bg-black/50 backdrop-blur-sm border border-green-500/30 rounded-2xl p-6 flex flex-col justify-between gap-4">
+                <div>
+                  <h4 className="font-bold text-green-300 text-md">Permitir Links de Mídia</h4>
+                  <p className="text-green-400/80 text-xs mt-1">Ignora links de imagens e streamings de vídeo comuns (ex: YouTube, Imgur, Tenor).</p>
+                </div>
+                <div className="flex justify-end">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={allowMedia} 
+                      disabled={!enabled}
+                      onChange={(e) => setAllowMedia(e.target.checked)} 
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-black/40 border border-green-500/20 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-green-700 peer-checked:after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500" />
+                  </label>
+                </div>
+              </div>
+
+              {/* Permitir Redes Sociais */}
+              <div className="bg-black/50 backdrop-blur-sm border border-green-500/30 rounded-2xl p-6 flex flex-col justify-between gap-4">
+                <div>
+                  <h4 className="font-bold text-green-300 text-md">Permitir Redes Sociais</h4>
+                  <p className="text-green-400/80 text-xs mt-1">Ignora hiperlinks que direcionem para perfis externos (ex: Twitter/X, Instagram, TikTok).</p>
+                </div>
+                <div className="flex justify-end">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={allowSocials} 
+                      disabled={!enabled}
+                      onChange={(e) => setAllowSocials(e.target.checked)} 
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-black/40 border border-green-500/20 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-green-700 peer-checked:after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500" />
+                  </label>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Whitelist de Domínios */}
+            <div className="bg-black/50 backdrop-blur-sm border border-green-500/30 rounded-2xl p-6">
+              <h3 className="text-lg font-bold text-green-300 mb-1">Domínios Confiáveis (Whitelist)</h3>
+              <p className="text-green-400 text-sm mb-4">Adicione sites específicos que o seu Bot deve ignorar e sempre permitir o envio.</p>
+              
+              <form onSubmit={handleAddDomain} className="flex gap-3 mb-6">
+                <input 
+                  type="text" 
+                  value={newDomain}
+                  disabled={!enabled}
+                  onChange={(e) => setNewDomain(e.target.value)}
+                  placeholder="github.com, google.com.br..."
+                  className="flex-1 px-4 py-2.5 bg-black/50 border border-green-500/30 rounded-lg text-green-300 placeholder-green-700 focus:outline-none focus:border-green-500/50 text-sm transition-all"
+                />
+                <button
+                  type="submit"
+                  disabled={!enabled}
+                  className="px-4 rounded-lg bg-green-500/10 border border-green-500/30 hover:bg-green-500/20 text-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  <FaPlus size={14} />
+                </button>
+              </form>
+
+              {/* Lista de tags inseridas */}
+              <div className="flex flex-wrap gap-2">
+                {allowedDomains.length === 0 ? (
+                  <p className="text-green-600/50 text-xs italic">Nenhum domínio permitido adicionado.</p>
+                ) : (
+                  allowedDomains.map((domain) => (
+                    <div 
+                      key={domain}
+                      className="inline-flex items-center gap-2 bg-black/40 border border-green-500/30 text-green-300 text-xs px-3 py-1.5 rounded-lg"
+                    >
+                      <span className="font-mono">{domain}</span>
+                      <button 
+                        type="button"
+                        onClick={() => handleRemoveDomain(domain)}
+                        className="p-1 text-green-500 hover:text-red-400 transition-colors"
+                      >
+                        <FaTrash size={10} />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Botões Inferiores de Ação */}
+          <div className="mt-8 flex justify-end gap-3 border-t border-green-500/20 pt-6">
+            <button
+              onClick={() => router.push(`/server/${guildId}`)}
+              className="px-6 py-2.5 rounded-lg bg-black/50 border border-green-500/30 hover:bg-green-500/10 text-green-400 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? (
+                <>
+                  <FaSpinner className="animate-spin" size={16} />
+                  <span>Salvando...</span>
+                </>
+              ) : (
+                <>
+                  <FaSave size={16} />
+                  <span>Salvar Configurações</span>
+                </>
+              )}
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      <style jsx>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
+      `}</style>
+    </div>
+  );
+}
