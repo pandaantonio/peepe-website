@@ -9,7 +9,8 @@ let app;
 if (getApps().length === 0) {
   try {
     const privateKey = process.env.FIREBASE_PRIVATE_KEY
-      ?.replace(/\\n/g, '\n')
+      ?.replace(/\\n/g, '\n') // Corrige barras duplas se houver
+      ?.replace(/"/g, '')     // Remove aspas duplas acidentais das pontas
       ?.trim();
 
     if (!privateKey) {
