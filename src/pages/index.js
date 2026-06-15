@@ -1,16 +1,8 @@
 // pages/index.js
-import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Navbar from '../components/Navbar';
-import { FaRobot } from 'react-icons/fa';
 
 export default function Home() {
-  const [serverCount, setServerCount] = useState(0);
-
-  useEffect(() => {
-    setServerCount(1247);
-  }, []);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-900 to-green-900">
       <Head>
@@ -36,19 +28,22 @@ export default function Home() {
             O bot completo que seu servidor precisa! 🎮⚙️🛡️
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <button className="bg-green-600 hover:bg-green-700 px-8 py-3 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105">
+            <a 
+              href="https://discord.com/oauth2/authorize?client_id=1400971977795047516&permissions=1099780073494&integration_type=0&scope=bot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-green-600 hover:bg-green-700 px-8 py-3 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105 inline-block text-white"
+            >
               Adicionar ao Discord
-            </button>
-            <button className="bg-green-800 hover:bg-green-700 px-8 py-3 rounded-full font-semibold text-lg transition-all duration-300">
+            </a>
+            <a 
+              href="https://discord.gg/c2PbjMcGUn"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-green-800 hover:bg-green-700 px-8 py-3 rounded-full font-semibold text-lg transition-all duration-300 inline-block text-white"
+            >
               Servidor Suporte
-            </button>
-          </div>
-          
-          <div className="mt-8 inline-flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-4 py-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-            <span className="text-sm text-green-300">
-              Bot Online • {serverCount}+ servidores
-            </span>
+            </a>
           </div>
         </div>
       </section>
