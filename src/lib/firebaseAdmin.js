@@ -1,16 +1,15 @@
-// lib/firebaseAdmin.js
+// src/lib/firebaseAdmin.js
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getDatabase } from 'firebase-admin/database';
-import { getAuth } from 'firebase-admin/auth';
 
 let app;
 
-// Verifica se já existe uma instância inicializada
+// Verifica se já existe uma instância inicializada do Firebase Admin
 if (getApps().length === 0) {
   try {
     const privateKey = process.env.FIREBASE_PRIVATE_KEY
-      ?.replace(/\\n/g, '\n') // Corrige barras duplas se houver
-      ?.replace(/"/g, '')     // Remove aspas duplas acidentais das pontas
+      ?.replace(/\\n/g, '\n')
+      ?.replace(/"/g, '') // Remove aspas extras que a Vercel pode injetar
       ?.trim();
 
     if (!privateKey) {
@@ -42,8 +41,7 @@ if (getApps().length === 0) {
   app = getApps()[0];
 }
 
-// Exporta o database e auth de forma segura
+// Exporta APENAS o database de forma segura (sem carregar o submódulo de auth que quebra a Vercel)
 export const adminDb = app ? getDatabase(app) : null;
-export const adminAuth = app ? getAuth(app) : null;
 
 export default app;
