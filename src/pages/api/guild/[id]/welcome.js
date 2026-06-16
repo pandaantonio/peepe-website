@@ -1,6 +1,51 @@
 // pages/api/guild/[id]/welcome/index.js
 import { adminDb } from "@/lib/firebaseAdmin";
 
+// Função refinada para validar componentes de forma genérica (reutilizável)
+function validarComponenteV2(comp, i, sufixoErro = "") {
+    if (comp.type === 10 && (!comp.content || comp.content.trim() === "")) {
+        return `Componente #${i + 1}${sufixoErro} (Text Display): O campo 'content' é obrigatório.`;
+    }
+    if (comp.type === 13 && (!comp.file?.url || comp.file.url.trim() === "")) {
+        return `Componente #${i + 1}${sufixoErro} (File): A URL do arquivo é obrigatória.`;
+    }
+    if (comp.type === 14 && comp.spacing !== undefined && ![1, 2].includes(comp.spacing)) {
+        return `Componente #${i + 1}${sufixoErro} (Separator): O espaçamento deve ser 1 ou 2.`;
+    }
+    if (comp.type === 12) {
+        if (!Array.isArray(comp.items) || comp.items.length === 0) {
+            return `Componente #${i + 1}${sufixoErro} (Galeria): É necessário adicionar pelo menos 1 item.`;
+        }
+        for (let j = 0; j < comp.items.length; j++) {
+            if (!comp.items[j].media?.url || comp.items[j].media.url.trim() === "") {
+                return `Componente #${i + 1}${sufixoErro} (Galeria), Item #${j + 1}: A URL da mídia é obrigatória.`;
+            }
+        }
+    }
+    // Permite validar a estrutura da Section caso ela esteja aninhada
+    if (comp.type === 9) {
+        if (!Array.isArray(comp.components) || comp.components.length === 0) {
+            return `Componente #${i + 1}${sufixoErro} (Section): Deve conter pelo menos 1 subcomponente interno.`;
+        }
+        for (let s = 0; s < comp.components.length; s++) {
+            const subErro = validarComponenteV2(comp.components[s], s, ` da Section #${i + 1}${sufixoErro}`);
+            if (subErro) return subErro;
+        }
+        if (comp.accessory) {
+            const acc = comp.accessory;
+            if (acc.type === 11 && (!acc.media?.url || acc.media.url.trim() === "")) {
+                return `Componente #${i + 1}${sufixoErro} (Section): O acessório Thumbnail exige uma URL válida.`;
+            }
+            if (acc.type === 2) {
+                if (acc.style !== 5) return `Componente #${i + 1}${sufixoErro} (Section): O botão acessório deve ser do estilo Link (5).`;
+                if (!acc.url || acc.url.trim() === "") return `Componente #${i + 1}${sufixoErro} (Section): URL do botão acessório é obrigatória.`;
+                if (!acc.label || acc.label.trim() === "") return `Componente #${i + 1}${sufixoErro} (Section): O texto do botão acessório é obrigatório.`;
+            }
+        }
+    }
+    return null;
+}
+
 export default async function handler(req, res) {
     try {
         const { id: guildId } = req.query;
@@ -21,43 +66,36 @@ export default async function handler(req, res) {
         if (req.method === "POST") {
             const { enabled, channelId, isV2, message } = req.body;
 
-            if (enabled) {
+            if (enabled && isV2) {
                 if (!channelId || channelId.trim() === "") {
-                    return res.status(400).json({ error: "O Canal de Texto de destino é obrigatório quando o módulo está ativo." });
+                    return res.status(400).json({ error: "O Canal de Texto é obrigatório." });
                 }
-                
-                if (isV2) {
-                    if (message?.content || message?.embeds) {
-                        return res.status(400).json({ error: "O modo Componentes v2 não permite o uso de content ou embeds tradicionais." });
-                    }
+                if (message?.flags !== 32768 || !Array.isArray(message?.components)) {
+                    return res.status(400).json({ error: "Estrutura nativa do Modo V2 inválida." });
+                }
 
-                    if (message?.flags !== 32768 || !Array.isArray(message?.components)) {
-                        return res.status(400).json({ error: "Estrutura nativa do Modo V2 inválida." });
-                    }
+                const comps = message.components;
+                for (let i = 0; i < comps.length; i++) {
+                    const comp = comps[i];
 
-                    const comps = message.components;
-                    for (let i = 0; i < comps.length; i++) {
-                        const comp = comps[i];
+                    // Se for CONTAINER (TYPE 17) na raiz
+                    if (comp.type === 17) {
+                        if (!Array.isArray(comp.components) || comp.components.length === 0) {
+                            return res.status(400).json({ error: `Componente #${i + 1} (Container): Deve conter subcomponentes.` });
+                        }
+                        if (comp.accent_color !== undefined && typeof comp.accent_color !== 'number') {
+                            return res.status(400).json({ error: `Componente #${i + 1} (Container): Cor inválida.` });
+                        }
                         
-                        if (comp.type === 10 && (!comp.content || comp.content.trim() === "")) {
-                            return res.status(400).json({ error: `Componente #${i + 1} (Text Display): O campo 'content' é obrigatório.` });
+                        // Varre os subcomponentes do container (que agora podem incluir Section tipo 9)
+                        for (let c = 0; c < comp.components.length; c++) {
+                            const erroSub = validarComponenteV2(comp.components[c], c, ` do Container #${i + 1}`);
+                            if (erroSub) return res.status(400).json({ error: erroSub });
                         }
-                        else if (comp.type === 13 && (!comp.file?.url || comp.file.url.trim() === "")) {
-                            return res.status(400).json({ error: `Componente #${i + 1} (File): A URL do arquivo é obrigatória.` });
-                        }
-                        else if (comp.type === 14 && comp.spacing !== undefined && ![1, 2].includes(comp.spacing)) {
-                            return res.status(400).json({ error: `Componente #${i + 1} (Separator): O espaçamento deve ser 1 ou 2.` });
-                        }
-                        else if (comp.type === 12) {
-                            if (!Array.isArray(comp.items) || comp.items.length === 0) {
-                                return res.status(400).json({ error: `Componente #${i + 1} (Galeria): É necessário adicionar pelo menos 1 item.` });
-                            }
-                            for (let j = 0; j < comp.items.length; j++) {
-                                if (!comp.items[j].media?.url || comp.items[j].media.url.trim() === "") {
-                                    return res.status(400).json({ error: `Componente #${i + 1} (Galeria), Item #${j + 1}: A URL da mídia é obrigatória.` });
-                                }
-                            }
-                        }
+                    } else {
+                        // Validação para componentes soltos na raiz (incluindo Section tipo 9 solta)
+                        const erroGeral = validarComponenteV2(comp, i);
+                        if (erroGeral) return res.status(400).json({ error: erroGeral });
                     }
                 }
             }
