@@ -12,7 +12,8 @@ import {
   FaCog,
   FaChevronRight,
   FaLink,
-  FaUserShield
+  FaUserShield,
+  FaRobot
 } from 'react-icons/fa';
 
 export default function GuildDashboard() {
@@ -138,7 +139,7 @@ export default function GuildDashboard() {
 
   const iconUrl = getIconUrl();
 
-  // Exibindo apenas módulos ativos (Removidos os "Em breve")
+  // Módulos ativos do bot
   const configCards = [
     {
       id: 'autorole',
@@ -163,6 +164,14 @@ export default function GuildDashboard() {
       icon: <FaUserShield size={20} />,
       color: 'red',
       path: `/server/${guild.id}/antiinvite`
+    },
+    {
+      id: 'welcome',
+      title: 'Boas-Vindas',
+      description: 'Configure mensagens automáticas de boas-vindas para novos membros usando webhooks.',
+      icon: <FaRobot size={22} />,
+      color: 'blue',
+      path: `/server/${guild.id}/welcome`
     }
   ];
 
@@ -184,6 +193,12 @@ export default function GuildDashboard() {
       bg: "group-hover:bg-fuchsia-500/[0.02]",
       text: "text-fuchsia-400 bg-fuchsia-500/10 border-fuchsia-500/20",
       button: "bg-fuchsia-500 hover:bg-fuchsia-400 text-white shadow-fuchsia-950/40"
+    },
+    blue: {
+      border: "hover:border-blue-500/30",
+      bg: "group-hover:bg-blue-500/[0.02]",
+      text: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+      button: "bg-blue-500 hover:bg-blue-400 text-white shadow-blue-950/40"
     }
   };
 
