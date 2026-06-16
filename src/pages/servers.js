@@ -3,7 +3,7 @@ import { useSession, signIn } from "next-auth/react";
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import Navbar from "../components/Navbar";
-import { FaServer, FaCrown, FaShieldAlt, FaArrowRight, FaDiscord } from "react-icons/fa";
+import { FaServer, FaArrowRight, FaDiscord, FaRedo } from "react-icons/fa";
 
 export default function Servers() {
   const { data: session, status } = useSession();
@@ -22,9 +22,9 @@ export default function Servers() {
   const fetchUserGuilds = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await fetch("/api/user-guilds");
       const data = await response.json();
-
       if (response.ok && data.success) {
         setGuilds(data.guilds);
       } else {
@@ -40,43 +40,80 @@ export default function Servers() {
 
   const getGuildIcon = (guild) => {
     if (guild.icon) {
-      return `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=64`;
+      return `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128`;
     }
     return null;
   };
 
+  /* ── LOADING ─────────────────────────────── */
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-[#0B0F17] text-slate-100">
+      <div className="min-h-screen text-zinc-100" style={{ background: "#05060F" }}>
         <Navbar />
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <div className="w-12 h-12 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-slate-400 text-sm tracking-wide">Buscando suas guildas...</p>
+            <div
+              className="w-12 h-12 rounded-full mx-auto mb-5 animate-spin"
+              style={{
+                border: "2px solid rgba(255,255,255,0.06)",
+                borderTopColor: "#10b981",
+              }}
+            />
+            <p className="text-sm text-zinc-500">Carregando seus servidores…</p>
           </div>
         </div>
       </div>
     );
   }
 
+  /* ── UNAUTHENTICATED ─────────────────────── */
   if (status === "unauthenticated") {
     return (
-      <div className="min-h-screen bg-[#0B0F17] flex flex-col text-slate-100">
+      <div className="min-h-screen flex flex-col text-zinc-100" style={{ background: "#05060F" }}>
         <Navbar />
-        <div className="flex items-center justify-center flex-1 px-6">
-          <div className="bg-slate-900/60 border border-slate-800 backdrop-blur-xl rounded-2xl p-10 max-w-md w-full text-center shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-emerald-500 to-green-500" />
-            <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-slate-700/50">
-              <FaDiscord className="w-8 h-8 text-emerald-400" />
+
+        {/* radial glow */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: "30%", left: "50%", transform: "translate(-50%,-50%)",
+            width: "600px", height: "600px",
+            background: "radial-gradient(circle, rgba(88,101,242,0.08) 0%, transparent 65%)",
+          }}
+        />
+
+        <div className="flex-1 flex items-center justify-center px-6">
+          <div
+            className="relative max-w-sm w-full rounded-3xl p-10 text-center"
+            style={{
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
+              style={{
+                background: "linear-gradient(135deg,#5865F2,#4752C4)",
+                boxShadow: "0 0 30px rgba(88,101,242,0.35)",
+              }}
+            >
+              <FaDiscord className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-3">Acesso Restrito</h2>
-            <p className="text-slate-400 text-sm mb-8 leading-relaxed">
-              Conecte sua conta do Discord para visualizar e gerenciar as configurações do Peepe Bot em seus servidores.
+
+            <h2 className="text-2xl font-bold text-white mb-2">Acesso restrito</h2>
+            <p className="text-sm text-zinc-400 mb-8 leading-relaxed">
+              Conecte sua conta do Discord para ver e gerenciar seus servidores.
             </p>
+
             <button
               onClick={() => signIn("discord")}
-              className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 shadow-lg shadow-emerald-900/20 hover:-translate-y-0.5"
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold text-white transition-all duration-200 hover:scale-105 active:scale-95"
+              style={{
+                background: "linear-gradient(135deg,#5865F2,#4752C4)",
+                boxShadow: "0 0 20px rgba(88,101,242,0.3)",
+              }}
             >
+              <FaDiscord />
               Entrar com Discord
             </button>
           </div>
@@ -85,110 +122,219 @@ export default function Servers() {
     );
   }
 
+  /* ── MAIN ────────────────────────────────── */
   return (
-    <div className="min-h-screen bg-[#0B0F17] text-slate-100 relative overflow-hidden">
+    <div className="min-h-screen text-zinc-100 relative overflow-hidden" style={{ background: "#05060F" }}>
       <Head>
-        <title>Meus Servidores - Peepe Bot</title>
-        <meta name="description" content="Gerencie os servidores onde o Peepe Bot está presente" />
+        <title>Meus Servidores — Peepe Bot</title>
       </Head>
 
-      {/* Glow ambiental de fundo */}
-      <div className="absolute top-0 right-1/4 w-[600px] h-[300px] bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
+      {/* top glow */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          top: "-160px", left: "50%", transform: "translateX(-50%)",
+          width: "700px", height: "700px",
+          background: "radial-gradient(circle, rgba(16,185,129,0.05) 0%, transparent 65%)",
+        }}
+      />
 
       <Navbar />
 
-      <div className="container mx-auto px-6 pt-36 pb-24 relative z-10 max-w-7xl">
-        {/* Header */}
-        <div className="text-left mb-12 border-b border-slate-800 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="max-w-6xl mx-auto px-6 pt-36 pb-24">
+
+        {/* ── Page Header ── */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-14">
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2">
+            <p
+              className="text-xs font-semibold tracking-[0.18em] uppercase mb-2"
+              style={{ color: "#10b981" }}
+            >
+              Dashboard
+            </p>
+            <h1
+              className="text-4xl md:text-5xl font-extrabold tracking-tighter"
+              style={{
+                background: "linear-gradient(160deg,#fff 30%,rgba(255,255,255,0.4) 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
               Meus Servidores
             </h1>
-            <p className="text-slate-400 text-base">
-              Selecione uma comunidade ativa abaixo para configurar o bot.
+            <p className="text-sm text-zinc-500 mt-2">
+              Gerencie onde o Peepe Bot está ativo
             </p>
           </div>
+
           {guilds.length > 0 && (
-            <span className="text-xs font-semibold px-3 py-1.5 bg-slate-800 border border-slate-700/60 rounded-lg text-slate-400 self-start md:self-auto">
-              {guilds.length} Servidores Disponíveis
-            </span>
+            <div
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm"
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.45)",
+              }}
+            >
+              <FaServer className="text-zinc-600 w-3 h-3" />
+              {guilds.length} servidor{guilds.length !== 1 ? "es" : ""}
+            </div>
           )}
         </div>
 
-        {/* Error Message */}
+        {/* Divider */}
+        <div style={{ height: "1px", background: "rgba(255,255,255,0.05)", marginBottom: "40px" }} />
+
+        {/* ── Error ── */}
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-8 text-center max-w-2xl mx-auto">
-            <p className="text-red-400 text-sm font-medium">{error}</p>
+          <div
+            className="flex items-start gap-3 p-4 rounded-2xl mb-8"
+            style={{
+              background: "rgba(239,68,68,0.08)",
+              border: "1px solid rgba(239,68,68,0.2)",
+            }}
+          >
+            <span className="text-red-400 mt-0.5">⚠</span>
+            <div className="flex-1">
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+            <button
+              onClick={fetchUserGuilds}
+              className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
+            >
+              <FaRedo className="w-3 h-3" /> Tentar novamente
+            </button>
           </div>
         )}
 
-        {/* Servers Grid */}
+        {/* ── Empty State ── */}
         {guilds.length === 0 && !error ? (
-          <div className="bg-slate-900/40 border border-slate-800 backdrop-blur-md rounded-2xl p-16 text-center max-w-2xl mx-auto shadow-xl">
-            <div className="w-16 h-16 bg-slate-800/80 rounded-xl flex items-center justify-center mx-auto mb-6 border border-slate-700/50">
-              <FaServer className="w-6 h-6 text-slate-500" />
+          <div className="text-center py-28">
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <FaServer className="w-7 h-7 text-zinc-600" />
             </div>
-            <h2 className="text-xl font-bold text-white mb-2">Nenhum servidor elegível</h2>
-            <p className="text-slate-400 text-sm mb-8 max-w-md mx-auto leading-relaxed">
-              Você precisa possuir cargo de permissão administrativa para configurar o Peepe Bot em servidores externos.
+            <h3 className="text-xl font-semibold text-white mb-2">Nenhum servidor encontrado</h3>
+            <p className="text-sm text-zinc-500 max-w-xs mx-auto leading-relaxed">
+              Você precisa ter permissão de administrador para gerenciar o bot em um servidor.
             </p>
-            <button className="bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300">
-              Convidar Bot para um Servidor
-            </button>
           </div>
         ) : (
+          /* ── Guild Grid ── */
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {guilds.map((guild) => (
-              <div
-                key={guild.id}
-                className="group bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 hover:bg-slate-900/80 hover:border-slate-700 transition-all duration-300 flex flex-col justify-between shadow-sm hover:shadow-xl relative overflow-hidden"
-              >
-                {/* Linha discreta de hover no topo do card */}
-                <div className="absolute top-0 left-0 w-full h-[1.5px] bg-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+            {guilds.map((guild) => {
+              const icon = getGuildIcon(guild);
+              const initials = guild.name.slice(0, 2).toUpperCase();
 
-                <div className="flex items-start gap-4 mb-6">
-                  {/* Guild Icon */}
-                  {getGuildIcon(guild) ? (
-                    <img
-                      src={getGuildIcon(guild)}
-                      alt={guild.name}
-                      className="w-14 h-14 rounded-xl object-cover ring-2 ring-slate-800/60 group-hover:ring-emerald-500/40 transition-all duration-300"
-                    />
-                  ) : (
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center border border-slate-700 text-slate-400 font-bold text-lg group-hover:border-emerald-500/30">
-                      {guild.name.charAt(0)}
-                    </div>
-                  )}
-                  
-                  {/* Guild Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-slate-100 mb-1.5 truncate group-hover:text-white transition-colors">
-                      {guild.name}
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {guild.owner ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
-                          <FaCrown className="w-2.5 h-2.5" /> Dono
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
-                          <FaShieldAlt className="w-2.5 h-2.5" /> Admin
-                        </span>
-                      )}
+              return (
+                <div
+                  key={guild.id}
+                  className="group relative rounded-3xl p-6 flex flex-col transition-all duration-300 hover:-translate-y-1"
+                  style={{
+                    background: "rgba(255,255,255,0.025)",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                    e.currentTarget.style.borderColor = "rgba(16,185,129,0.2)";
+                    e.currentTarget.style.boxShadow = "0 0 30px rgba(16,185,129,0.06)";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.025)";
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  {/* Server icon + name */}
+                  <div className="flex items-center gap-4 mb-5">
+                    {icon ? (
+                      <img
+                        src={icon}
+                        alt={guild.name}
+                        className="w-14 h-14 rounded-2xl object-cover flex-shrink-0"
+                        style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+                      />
+                    ) : (
+                      <div
+                        className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 text-lg font-bold"
+                        style={{
+                          background: "rgba(255,255,255,0.06)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          color: "rgba(255,255,255,0.4)",
+                        }}
+                      >
+                        {initials}
+                      </div>
+                    )}
+
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-white leading-snug line-clamp-2 text-base">
+                        {guild.name}
+                      </h3>
+                      <div className="mt-1.5">
+                        {guild.owner ? (
+                          <span
+                            className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
+                            style={{
+                              background: "rgba(251,191,36,0.1)",
+                              border: "1px solid rgba(251,191,36,0.2)",
+                              color: "#fbbf24",
+                            }}
+                          >
+                            👑 Dono
+                          </span>
+                        ) : (
+                          <span
+                            className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
+                            style={{
+                              background: "rgba(16,185,129,0.1)",
+                              border: "1px solid rgba(16,185,129,0.2)",
+                              color: "#10b981",
+                            }}
+                          >
+                            🛡️ Admin
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Action Buttons */}
-                <button
-                  onClick={() => window.location.href = `/server/${guild.id}`}
-                  className="w-full bg-slate-800 hover:bg-emerald-600 px-4 py-2.5 rounded-xl font-bold text-sm text-slate-300 hover:text-white transition-all duration-200 flex items-center justify-center gap-2 border border-slate-700/60 hover:border-transparent"
-                >
-                  <span>Gerenciar Painel</span>
-                  <FaArrowRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                </button>
-              </div>
-            ))}
+                  {/* Spacer */}
+                  <div className="flex-1" />
+
+                  {/* Manage button */}
+                  <button
+                    onClick={() => window.location.href = `/server/${guild.id}`}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 mt-4 group/btn"
+                    style={{
+                      background: "rgba(16,185,129,0.08)",
+                      border: "1px solid rgba(16,185,129,0.18)",
+                      color: "#10b981",
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "linear-gradient(135deg,#34d399,#059669)";
+                      e.currentTarget.style.borderColor = "transparent";
+                      e.currentTarget.style.color = "#052e16";
+                      e.currentTarget.style.boxShadow = "0 0 20px rgba(16,185,129,0.3)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "rgba(16,185,129,0.08)";
+                      e.currentTarget.style.borderColor = "rgba(16,185,129,0.18)";
+                      e.currentTarget.style.color = "#10b981";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    Gerenciar
+                    <FaArrowRight className="w-3 h-3 transition-transform group-hover/btn:translate-x-0.5" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
