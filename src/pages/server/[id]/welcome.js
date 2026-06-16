@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useSession } from "next-auth/react";
 import Navbar from '@/components/Navbar';
-import { 
+import {
   FaArrowLeft, FaSave, FaSpinner, FaCheckCircle, FaExclamationTriangle,
   FaPlus, FaTrash, FaCube, FaListAlt, FaFileAlt, FaSlidersH, FaImages, FaAlignLeft, FaUser, FaInfoCircle, FaHashtag
 } from 'react-icons/fa';
@@ -31,6 +31,7 @@ export default function WelcomePage() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+  // Localize o useEffect dentro de pages/server/[id]/welcome.js e substitua por este:
   useEffect(() => {
     if (!guildId || status === "loading") return;
     if (status === "unauthenticated") { router.push("/servers"); return; }
@@ -39,33 +40,47 @@ export default function WelcomePage() {
       try {
         setLoading(true);
         setError(null);
-        
-        // 1. Validar servidor do usuário
+
+        // 1. Buscar as Guilds do Usuário
         const guildsResponse = await fetch(`/api/user-guilds`, {
           headers: { 'Authorization': `Bearer ${session?.accessToken}` }
         });
         const guildsData = await guildsResponse.json();
         if (!guildsResponse.ok || !guildsData.success) throw new Error('Erro ao buscar dados do servidor');
-        
+
         const foundGuild = guildsData.guilds?.find(g => g.id === guildId);
         if (!foundGuild) throw new Error('Servidor não encontrado.');
         setGuild(foundGuild);
 
-        // 2. Buscar canais de texto reais do servidor usando a nova rota
-        const channelsRes = await fetch(`/api/guild/${guildId}/channels`);
-        const channelsData = await channelsRes.json();
-        if (channelsRes.ok && channelsData.success) {
-          setChannels(channelsData.channels || []);
+        // 2. CHAMADA BLINDADA PARA OS CANAIS
+        try {
+          const channelsRes = await fetch(`/api/guild/${guildId}/channels`);
+
+          if (channelsRes.ok) {
+            const contentType = channelsRes.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+              const channelsData = await channelsRes.json();
+              if (channelsData && channelsData.success) {
+                setChannels(channelsData.channels || []);
+              }
+            } else {
+              console.error("A rota de canais foi encontrada, mas não retornou um JSON válido.");
+            }
+          } else {
+            console.error(`A API de canais respondeu com status de erro: ${channelsRes.status}`);
+          }
+        } catch (channelError) {
+          console.error("Falha na requisição dos canais:", channelError);
         }
 
-        // 3. Carregar configurações salvas
+        // 3. Carregar Configurações do Módulo de Boas-vindas
         const response = await fetch(`/api/guild/${guildId}/welcome`);
-        if (!response.ok) throw new Error('Erro ao carregar dados de Boas-vindas.');
-        
+        if (!response.ok) throw new Error('Erro ao carregar dados salvos de Boas-vindas.');
+
         const data = await response.json();
-        setEnabled(!!data?.enabled); 
+        setEnabled(!!data?.enabled);
         setChannelId(data?.channelId || '');
-        
+
         const loadedIsV2 = !!data?.isV2;
         setIsV2(loadedIsV2);
 
@@ -209,7 +224,7 @@ export default function WelcomePage() {
         const resData = await response.json();
         throw new Error(resData.error || 'Erro ao gravar as configurações.');
       }
-      
+
       setSuccess('Configurações salvas com sucesso!');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) { setError(err.message); } finally { setSaving(false); }
@@ -231,8 +246,8 @@ export default function WelcomePage() {
           <FaArrowLeft size={11} /> <span>Voltar ao Dashboard</span>
         </button>
 
-        {success && <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-3"><FaCheckCircle size={16}/><span>{success}</span></div>}
-        {error && <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center gap-3"><FaExclamationTriangle size={16}/><span>{error}</span></div>}
+        {success && <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-3"><FaCheckCircle size={16} /><span>{success}</span></div>}
+        {error && <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center gap-3"><FaExclamationTriangle size={16} /><span>{error}</span></div>}
 
         <div className="space-y-5">
           {/* Módulo Ativo */}
@@ -242,7 +257,7 @@ export default function WelcomePage() {
               <p className="text-slate-400 text-xs mt-0.5">Controla se o envio de saudações automáticas nativas do bot está ativo.</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="sr-only peer"/>
+              <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="sr-only peer" />
               <div className="w-12 h-6 bg-slate-950 border border-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-600 peer-checked:after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
             </label>
           </div>
@@ -253,13 +268,13 @@ export default function WelcomePage() {
               <div>
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Mapeamento de Renderização</span>
                 <span className="text-sm font-extrabold text-white flex items-center gap-2 mt-1">
-                  {isV2 ? <><FaCube className="text-indigo-400"/> Componentes v2 Ativo</> : <><FaListAlt className="text-emerald-400"/> Formulário Clássico Ativo</>}
+                  {isV2 ? <><FaCube className="text-indigo-400" /> Componentes v2 Ativo</> : <><FaListAlt className="text-emerald-400" /> Formulário Clássico Ativo</>}
                 </span>
               </div>
               <div className="flex gap-2">
                 {!isV2 ? (
                   <button type="button" onClick={handleActivateV2} className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold text-xs rounded-xl hover:opacity-90 flex items-center gap-1.5 shadow-md shadow-indigo-950/50">
-                    <FaCube size={12}/> Mudar para Componentes v2
+                    <FaCube size={12} /> Mudar para Componentes v2
                   </button>
                 ) : (
                   <button type="button" onClick={() => setIsV2(false)} className="px-4 py-2 bg-slate-800 border border-slate-700 text-slate-300 font-bold text-xs rounded-xl">
@@ -272,7 +287,7 @@ export default function WelcomePage() {
             {/* SELETOR DE CANAIS DO BOT - SUBSTITUIU O WEBHOOK */}
             <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5">
               <h3 className="text-sm font-bold text-slate-200 mb-1 flex items-center gap-2">
-                <FaHashtag className="text-slate-400"/> Canal de Destino da Mensagem
+                <FaHashtag className="text-slate-400" /> Canal de Destino da Mensagem
               </h3>
               <select value={channelId} onChange={(e) => setChannelId(e.target.value)} className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 text-xs focus:outline-none cursor-pointer">
                 <option value="">-- Selecione um canal de texto --</option>
@@ -290,10 +305,10 @@ export default function WelcomePage() {
                 <div className="bg-slate-900/30 border border-slate-800/60 rounded-xl p-4">
                   <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider block mb-3">Inserir Sub-Componentes Nativos V2</span>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <button type="button" onClick={() => addComponentV2(10)} className="py-2.5 px-3 bg-slate-950 border border-slate-800 hover:border-indigo-500 rounded-xl text-xs font-bold text-slate-300 flex flex-col items-center gap-2"><FaAlignLeft className="text-indigo-400"/>Text Display</button>
-                    <button type="button" onClick={() => addComponentV2(13)} className="py-2.5 px-3 bg-slate-950 border border-slate-800 hover:border-indigo-500 rounded-xl text-xs font-bold text-slate-300 flex flex-col items-center gap-2"><FaFileAlt className="text-blue-400"/>File Attachment</button>
-                    <button type="button" onClick={() => addComponentV2(14)} className="py-2.5 px-3 bg-slate-950 border border-slate-800 hover:border-indigo-500 rounded-xl text-xs font-bold text-slate-300 flex flex-col items-center gap-2"><FaSlidersH className="text-amber-400"/>Separator</button>
-                    <button type="button" onClick={() => addComponentV2(12)} className="py-2.5 px-3 bg-slate-950 border border-slate-800 hover:border-indigo-500 rounded-xl text-xs font-bold text-slate-300 flex flex-col items-center gap-2"><FaImages className="text-purple-400"/>Media Gallery</button>
+                    <button type="button" onClick={() => addComponentV2(10)} className="py-2.5 px-3 bg-slate-950 border border-slate-800 hover:border-indigo-500 rounded-xl text-xs font-bold text-slate-300 flex flex-col items-center gap-2"><FaAlignLeft className="text-indigo-400" />Text Display</button>
+                    <button type="button" onClick={() => addComponentV2(13)} className="py-2.5 px-3 bg-slate-950 border border-slate-800 hover:border-indigo-500 rounded-xl text-xs font-bold text-slate-300 flex flex-col items-center gap-2"><FaFileAlt className="text-blue-400" />File Attachment</button>
+                    <button type="button" onClick={() => addComponentV2(14)} className="py-2.5 px-3 bg-slate-950 border border-slate-800 hover:border-indigo-500 rounded-xl text-xs font-bold text-slate-300 flex flex-col items-center gap-2"><FaSlidersH className="text-amber-400" />Separator</button>
+                    <button type="button" onClick={() => addComponentV2(12)} className="py-2.5 px-3 bg-slate-950 border border-slate-800 hover:border-indigo-500 rounded-xl text-xs font-bold text-slate-300 flex flex-col items-center gap-2"><FaImages className="text-purple-400" />Media Gallery</button>
                   </div>
                 </div>
 
@@ -302,20 +317,20 @@ export default function WelcomePage() {
                     <div key={index} className="bg-slate-900/40 border border-slate-800 rounded-2xl p-5 space-y-4 relative animate-fade-in">
                       <div className="flex items-center justify-between border-b border-slate-800/60 pb-2">
                         <span className="text-xs font-extrabold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">Bloco #{index + 1}</span>
-                        <button type="button" onClick={() => removeComponentV2(index)} className="text-rose-500 hover:bg-rose-500/10 p-1.5 rounded-lg"><FaTrash size={12}/></button>
+                        <button type="button" onClick={() => removeComponentV2(index)} className="text-rose-500 hover:bg-rose-500/10 p-1.5 rounded-lg"><FaTrash size={12} /></button>
                       </div>
 
                       {comp.type === 10 && (
                         <div>
                           <label className="text-[11px] font-bold text-slate-400 block mb-1">Conteúdo do Bloco de Texto (Markdown)</label>
-                          <textarea value={comp.content} onChange={(e) => updateComponentValue(index, 'content', e.target.value)} placeholder="# Texto em destaque..." rows={4} className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 text-xs resize-none focus:outline-none"/>
+                          <textarea value={comp.content} onChange={(e) => updateComponentValue(index, 'content', e.target.value)} placeholder="# Texto em destaque..." rows={4} className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 text-xs resize-none focus:outline-none" />
                         </div>
                       )}
 
                       {comp.type === 13 && (
                         <div>
                           <label className="text-[11px] font-bold text-slate-400 block mb-1">URL do Arquivo Anexo (file.url)</label>
-                          <input type="text" value={comp.file?.url || ''} onChange={(e) => updateComponentFile(index, e.target.value)} placeholder="attachment://game.zip" className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 text-xs focus:outline-none"/>
+                          <input type="text" value={comp.file?.url || ''} onChange={(e) => updateComponentFile(index, e.target.value)} placeholder="attachment://game.zip" className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 text-xs focus:outline-none" />
                         </div>
                       )}
 
@@ -350,13 +365,13 @@ export default function WelcomePage() {
                             {comp.items?.map((item, itemIdx) => (
                               <div key={itemIdx} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-start border-b border-slate-800/40 pb-2 last:border-0">
                                 <div className="md:col-span-5">
-                                  <input type="text" value={item.media?.url || ''} onChange={(e) => updateGalleryItem(index, itemIdx, 'url', e.target.value)} placeholder="URL da Mídia" className="w-full px-2 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-300 text-xs focus:outline-none"/>
+                                  <input type="text" value={item.media?.url || ''} onChange={(e) => updateGalleryItem(index, itemIdx, 'url', e.target.value)} placeholder="URL da Mídia" className="w-full px-2 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-300 text-xs focus:outline-none" />
                                 </div>
                                 <div className="md:col-span-6">
-                                  <input type="text" value={item.description || ''} onChange={(e) => updateGalleryItem(index, itemIdx, 'description', e.target.value)} placeholder="Descrição Alt" className="w-full px-2 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-300 text-xs focus:outline-none"/>
+                                  <input type="text" value={item.description || ''} onChange={(e) => updateGalleryItem(index, itemIdx, 'description', e.target.value)} placeholder="Descrição Alt" className="w-full px-2 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-300 text-xs focus:outline-none" />
                                 </div>
                                 <div className="md:col-span-1 flex justify-end pt-1">
-                                  <button type="button" onClick={() => removeItemFromGallery(index, itemIdx)} className="text-rose-500 hover:bg-rose-500/10 p-1 rounded"><FaTrash size={10}/></button>
+                                  <button type="button" onClick={() => removeItemFromGallery(index, itemIdx)} className="text-rose-500 hover:bg-rose-500/10 p-1 rounded"><FaTrash size={10} /></button>
                                 </div>
                               </div>
                             ))}
@@ -372,7 +387,7 @@ export default function WelcomePage() {
               <>
                 <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5">
                   <h3 className="text-sm font-bold text-slate-200 mb-1">Conteúdo da Mensagem</h3>
-                  <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={3} className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 text-xs resize-none focus:outline-none"/>
+                  <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={3} className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 text-xs resize-none focus:outline-none" />
                 </div>
 
                 <div className="space-y-4">
@@ -382,7 +397,7 @@ export default function WelcomePage() {
                   </div>
                   {embeds.map((emb, idx) => (
                     <div key={idx} className="bg-slate-900/40 border border-slate-800 rounded-2xl p-4 space-y-3">
-                      <input type="text" value={emb.title} onChange={(e) => updateEmbed(idx, 'title', e.target.value)} placeholder="Título" className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300"/>
+                      <input type="text" value={emb.title} onChange={(e) => updateEmbed(idx, 'title', e.target.value)} placeholder="Título" className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300" />
                     </div>
                   ))}
                 </div>
@@ -394,7 +409,7 @@ export default function WelcomePage() {
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-900">
             <button onClick={() => router.push(`/server/${guildId}`)} className="px-5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 text-xs font-bold">Cancelar</button>
             <button onClick={handleSave} disabled={saving} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-xs">
-              {saving ? <FaSpinner className="animate-spin inline mr-1"/> : null} Salvar Modificações
+              {saving ? <FaSpinner className="animate-spin inline mr-1" /> : null} Salvar Modificações
             </button>
           </div>
         </div>
