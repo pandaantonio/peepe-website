@@ -14,12 +14,50 @@ import {
   FaExclamationTriangle
 } from 'react-icons/fa';
 
+/* ── helpers ── */
+function StateScreen({ children }) {
+  return (
+    <div className="min-h-screen text-zinc-100" style={{ background: "#05060F" }}>
+      <Navbar />
+      <div className="flex items-center justify-center min-h-screen px-6">{children}</div>
+    </div>
+  );
+}
+
+function CenteredCard({ children }) {
+  return (
+    <div className="max-w-sm w-full rounded-3xl p-10 text-center"
+      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+      {children}
+    </div>
+  );
+}
+
+/* ── domain tag ── */
+function DomainTag({ domain, onRemove }) {
+  return (
+    <div className="inline-flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors"
+      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+      <span className="text-sm text-zinc-200 font-medium font-mono truncate">{domain}</span>
+      <button
+        onClick={onRemove}
+        className="p-1.5 rounded-lg transition-all ml-2 flex-shrink-0"
+        style={{ color: "rgba(255,255,255,0.25)", background: "transparent" }}
+        onMouseEnter={e => { e.currentTarget.style.color = "#f87171"; e.currentTarget.style.background = "rgba(239,68,68,0.1)"; }}
+        onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.25)"; e.currentTarget.style.background = "transparent"; }}
+      >
+        <FaTrash size={10} />
+      </button>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════ */
 export default function AntiLinkPage() {
   const router = useRouter();
   const { id: guildId } = router.query;
   const { data: session, status } = useSession();
 
-  // Estados de Configuração
   const [guild, setGuild] = useState(null);
   const [enabled, setEnabled] = useState(false);
   const [allowMedia, setAllowMedia] = useState(false);
@@ -27,15 +65,29 @@ export default function AntiLinkPage() {
   const [allowedDomains, setAllowedDomains] = useState([]);
   const [newDomain, setNewDomain] = useState('');
 
-  // Estados de Controle de UI
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+  // Sugestões de domínios comuns
+  const domainSuggestions = [
+    "cdn.discordapp.com",
+    "media.discordapp.net",
+    "media.tenor.com",
+    "tenor.com",
+    "giphy.com",
+    "youtube.com",
+    "youtu.be",
+    "instagram.com",
+    "tiktok.com",
+    "twitter.com",
+    "x.com",
+    "facebook.com",
+  ];
+
   useEffect(() => {
     if (!guildId || status === "loading") return;
-
     if (status === "unauthenticated") {
       router.push("/servers");
       return;
@@ -46,7 +98,6 @@ export default function AntiLinkPage() {
         setLoading(true);
         setError(null);
         
-        // 1. Buscar informações do servidor para o Header
         const guildsResponse = await fetch(`/api/user-guilds`);
         const guildsData = await guildsResponse.json();
         
@@ -58,7 +109,6 @@ export default function AntiLinkPage() {
         if (!foundGuild) throw new Error('Servidor não encontrado');
         setGuild(foundGuild);
 
-        // 2. Buscar configuração atual do Anti-Link
         const response = await fetch(`/api/guild/${guildId}/antilink`);
         if (!response.ok) throw new Error('Erro ao carregar dados do Anti-Link.');
         
@@ -80,7 +130,6 @@ export default function AntiLinkPage() {
     }
   }, [guildId, session, status, router]);
 
-  // Salvar configurações
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -111,9 +160,8 @@ export default function AntiLinkPage() {
     }
   };
 
-  // Adiciona domínio na Whitelist
   const handleAddDomain = (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     let domain = newDomain.trim().toLowerCase();
     if (!domain) return;
     
@@ -128,281 +176,310 @@ export default function AntiLinkPage() {
     setNewDomain('');
   };
 
-  // Remove domínio da Whitelist
+  const handleAddSuggestion = (domain) => {
+    if (!allowedDomains.includes(domain)) {
+      setAllowedDomains([...allowedDomains, domain]);
+    }
+  };
+
   const handleRemoveDomain = (domainToRemove) => {
     setAllowedDomains(allowedDomains.filter(domain => domain !== domainToRemove));
   };
 
-  const getIconUrl = () => {
-    if (!guild?.icon) return null;
-    return `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128`;
-  };
+  const iconUrl = guild?.icon
+    ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128`
+    : null;
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-[#0B0F17] text-slate-100">
-        <Navbar />
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="w-12 h-12 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-slate-400 text-sm tracking-wide">Buscando definições...</p>
-          </div>
+      <StateScreen>
+        <div className="text-center">
+          <div className="w-12 h-12 rounded-full mx-auto mb-5 animate-spin"
+            style={{ border: "2px solid rgba(255,255,255,0.06)", borderTopColor: "#10b981" }} />
+          <p className="text-sm text-zinc-500">Buscando definições…</p>
         </div>
-      </div>
+      </StateScreen>
     );
   }
 
   if (error && !guild) {
     return (
-      <div className="min-h-screen bg-[#0B0F17] text-slate-100">
-        <Navbar />
-        <div className="flex items-center justify-center min-h-screen px-4">
-          <div className="bg-slate-900/60 border border-slate-800 backdrop-blur-xl rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 mb-4">
-              <FaExclamationTriangle size={24} className="text-red-400" />
-            </div>
-            <h2 className="text-xl font-bold text-white mb-2">Erro Operacional</h2>
-            <p className="text-slate-400 text-sm mb-6">{error}</p>
-            <button
-              onClick={() => router.push(`/server/${guildId}`)}
-              className="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700/60 text-slate-200 rounded-xl font-semibold text-sm transition-all duration-200"
-            >
-              Voltar ao Dashboard
-            </button>
+      <StateScreen>
+        <CenteredCard>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5"
+            style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
+            <FaExclamationTriangle className="w-6 h-6" style={{ color: "#f87171" }} />
           </div>
-        </div>
-      </div>
+          <h2 className="text-xl font-bold text-white mb-2">Algo deu errado</h2>
+          <p className="text-sm text-zinc-400 mb-7 leading-relaxed">{error}</p>
+          <button onClick={() => router.push(`/server/${guildId}`)}
+            className="w-full py-3 rounded-2xl text-sm font-semibold text-zinc-200 transition-all hover:scale-105"
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+            Voltar ao Dashboard
+          </button>
+        </CenteredCard>
+      </StateScreen>
     );
   }
 
-  const iconUrl = getIconUrl();
-
   return (
-    <div className="min-h-screen bg-[#0B0F17] text-slate-100 relative overflow-hidden">
+    <div className="min-h-screen text-zinc-100 relative overflow-hidden" style={{ background: "#05060F" }}>
       <Navbar />
 
-      {/* Glow de fundo */}
-      <div className="absolute top-0 right-1/4 w-[500px] h-[250px] bg-purple-500/5 blur-[100px] rounded-full pointer-events-none" />
-      
-      <div className="relative max-w-4xl mx-auto px-6 pt-36 pb-24 z-10">
-        
-        {/* Botão Voltar */}
-        <button
-          onClick={() => router.push(`/server/${guildId}`)}
-          className="group inline-flex items-center gap-2.5 px-4 py-2 mb-8 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 hover:bg-slate-900 text-slate-400 hover:text-slate-200 transition-all duration-200 text-xs font-bold tracking-wide"
+      {/* top glow */}
+      <div className="absolute pointer-events-none"
+        style={{
+          top: "-160px", left: "50%", transform: "translateX(-50%)",
+          width: "700px", height: "700px",
+          background: "radial-gradient(circle, rgba(168, 85, 247, 0.05) 0%, transparent 65%)",
+        }}
+      />
+
+      <div className="relative max-w-4xl mx-auto px-6 pt-36 pb-24">
+
+        {/* back button */}
+        <button onClick={() => router.push(`/server/${guildId}`)}
+          className="group inline-flex items-center gap-2 mb-10 text-sm font-medium transition-colors"
+          style={{ color: "rgba(255,255,255,0.32)" }}
+          onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.7)"}
+          onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.32)"}
         >
           <FaArrowLeft size={11} className="group-hover:-translate-x-0.5 transition-transform" />
-          <span>Voltar ao Dashboard</span>
+          Voltar ao Dashboard
         </button>
 
-        {/* Mini Banner do Servidor */}
-        <div className="bg-slate-900/30 border border-slate-800/80 backdrop-blur-md rounded-2xl p-5 mb-10 flex items-center gap-4 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-purple-500 to-fuchsia-600" />
+        {/* server mini banner */}
+        <div className="relative flex items-center gap-4 rounded-3xl p-5 mb-10 overflow-hidden"
+          style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="absolute left-0 top-4 bottom-4 w-[3px] rounded-full"
+            style={{ background: "linear-gradient(to bottom,#a855f7,#7c3aed)" }} />
+
           {iconUrl ? (
-            <img
-              src={iconUrl}
-              alt={guild?.name}
-              className="w-12 h-12 rounded-xl object-cover ring-2 ring-slate-800 shadow-md"
-            />
+            <img src={iconUrl} alt={guild.name}
+              className="w-12 h-12 rounded-2xl object-cover flex-shrink-0"
+              style={{ border: "1px solid rgba(255,255,255,0.09)" }} />
           ) : (
-            <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400">
-              <FaDiscord size={22} />
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.3)" }}>
+              <FaDiscord size={20} />
             </div>
           )}
+
           <div>
-            <h1 className="text-xl font-black tracking-tight text-white mb-0.5">Proteção Anti-Link</h1>
-            <p className="text-slate-400 text-xs font-medium">
-              Controle o envio de links externos no chat de <span className="text-slate-200">{guild?.name}</span>
+            <h1 className="text-lg font-extrabold text-white tracking-tight">Anti-Link</h1>
+            <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+              Proteção contra links em <span className="text-zinc-300">{guild?.name}</span>
             </p>
           </div>
         </div>
 
-        {/* Mensagens de feedback */}
+        {/* feedback */}
         {success && (
-          <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3 animate-fade-in shadow-lg">
-            <FaCheckCircle className="text-emerald-400" size={16} />
-            <span className="text-emerald-400 text-sm font-medium">{success}</span>
+          <div className="flex items-center gap-3 p-4 rounded-2xl mb-6"
+            style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
+            <FaCheckCircle size={14} style={{ color: "#10b981" }} />
+            <span className="text-sm" style={{ color: "#10b981" }}>{success}</span>
           </div>
         )}
-        
-        {error && (
-          <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center gap-3 animate-fade-in shadow-lg">
-            <FaExclamationTriangle className="text-rose-400" size={16} />
-            <span className="text-rose-400 text-sm font-medium">{error}</span>
+        {error && guild && (
+          <div className="flex items-center gap-3 p-4 rounded-2xl mb-6"
+            style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+            <FaExclamationTriangle size={14} style={{ color: "#f87171" }} />
+            <span className="text-sm" style={{ color: "#f87171" }}>{error}</span>
           </div>
         )}
 
-        {/* Grid de Configurações Principais */}
-        <div className="space-y-5">
-          
-          {/* Toggle Principal */}
-          <div className="bg-slate-900/40 border border-slate-800/80 backdrop-blur-md rounded-2xl p-5 flex items-center justify-between gap-6">
-            <div>
-              <h3 className="text-base font-bold text-slate-200">Ativar Filtro de Links</h3>
-              <p className="text-slate-400 text-xs font-medium leading-relaxed max-w-md mt-0.5">
-                Remove mensagens de texto que contenham links para proteção contra invasões, spam e scam.
-              </p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-              <input 
-                type="checkbox" 
-                checked={enabled} 
-                onChange={(e) => setEnabled(e.target.checked)} 
-                className="sr-only peer"
-              />
-              <div className="w-12 h-6 bg-slate-950 border border-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-600 peer-checked:after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-fuchsia-600 peer-checked:border-purple-400/20" />
-            </label>
-          </div>
-
-          {/* Subopções Condicionais */}
-          <div className={`space-y-5 transition-all duration-300 ${enabled ? 'opacity-100 pointer-events-auto' : 'opacity-35 pointer-events-none'}`}>
-            
-            {/* Exceções Globais */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              
-              {/* Permitir Mídias */}
-              <div className="bg-slate-900/40 border border-slate-800/80 backdrop-blur-md rounded-2xl p-5 flex flex-col justify-between gap-5">
-                <div>
-                  <h4 className="font-bold text-slate-200 text-sm">Ignorar Links de Mídia</h4>
-                  <p className="text-slate-400 text-[11px] font-medium leading-normal mt-1">
-                    Não aplica a remoção em hiperlinks de imagens, GIFs ou streamings consolidados (ex: YouTube, Tenor, Imgur).
-                  </p>
-                </div>
-                <div className="flex justify-end">
-                  <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                    <input 
-                      type="checkbox" 
-                      checked={allowMedia} 
-                      disabled={!enabled}
-                      onChange={(e) => setAllowMedia(e.target.checked)} 
-                      className="sr-only peer"
-                    />
-                    <div className="w-10 h-5 bg-slate-950 border border-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-slate-700 peer-checked:after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-purple-500 peer-checked:border-purple-400/20" />
-                  </label>
-                </div>
-              </div>
-
-              {/* Permitir Redes Sociais */}
-              <div className="bg-slate-900/40 border border-slate-800/80 backdrop-blur-md rounded-2xl p-5 flex flex-col justify-between gap-5">
-                <div>
-                  <h4 className="font-bold text-slate-200 text-sm">Ignorar Redes Sociais</h4>
-                  <p className="text-slate-400 text-[11px] font-medium leading-normal mt-1">
-                    Permite a postagem direta de links que apontem para perfis e posts autorais (ex: X/Twitter, Instagram, TikTok).
-                  </p>
-                </div>
-                <div className="flex justify-end">
-                  <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                    <input 
-                      type="checkbox" 
-                      checked={allowSocials} 
-                      disabled={!enabled}
-                      onChange={(e) => setAllowSocials(e.target.checked)} 
-                      className="sr-only peer"
-                    />
-                    <div className="w-10 h-5 bg-slate-950 border border-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-slate-700 peer-checked:after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-purple-500 peer-checked:border-purple-400/20" />
-                  </label>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Whitelist de Domínios */}
-            <div className="bg-slate-900/40 border border-slate-800/80 backdrop-blur-md rounded-2xl p-5">
-              <h3 className="text-base font-bold text-slate-200">Lista de Domínios Confiáveis</h3>
-              <p className="text-slate-400 text-xs font-medium mb-4 mt-0.5">
-                Defina domínios específicos que passarão direto pelo scanner e nunca serão filtrados.
-              </p>
-              
-              <form onSubmit={handleAddDomain} className="flex gap-2 mb-4">
-                <input 
-                  type="text" 
-                  value={newDomain}
-                  disabled={!enabled}
-                  onChange={(e) => setNewDomain(e.target.value)}
-                  placeholder="github.com, google.com.br..."
-                  className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500/40 text-xs font-medium transition-all"
-                />
-                <button
-                  type="submit"
-                  disabled={!enabled}
-                  className="px-4 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400 rounded-xl transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                  <FaPlus size={11} />
-                </button>
-              </form>
-
-              {/* Lista de tags inseridas */}
-              <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-1">
-                {allowedDomains.length === 0 ? (
-                  <p className="text-slate-600 text-xs font-medium italic py-1">Nenhum domínio customizado na whitelist.</p>
-                ) : (
-                  allowedDomains.map((domain) => (
-                    <div 
-                      key={domain}
-                      className="inline-flex items-center gap-2 bg-slate-950/40 border border-slate-800/80 text-slate-300 text-xs px-3 py-1.5 rounded-xl"
-                    >
-                      <span className="font-mono text-[11px] font-medium">{domain}</span>
-                      <button 
-                        type="button"
-                        onClick={() => handleRemoveDomain(domain)}
-                        className="p-0.5 text-slate-500 hover:text-rose-400 transition-colors"
-                      >
-                        <FaTrash size={9} />
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-          </div>
-
-          {/* Menu Inferior de Ações Gerais */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-900">
-            <button
-              onClick={() => router.push(`/server/${guildId}`)}
-              className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 text-xs font-bold transition-colors"
-            >
-              Cancelar descarte
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-600 hover:from-purple-400 hover:to-fuchsia-500 text-white font-bold text-xs tracking-wide transition-all duration-200 flex items-center gap-2 shadow-md shadow-purple-950/30 disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5"
-            >
-              {saving ? (
-                <>
-                  <FaSpinner className="animate-spin" size={13} />
-                  <span>Registrando...</span>
-                </>
-              ) : (
-                <>
-                  <FaSave size={13} />
-                  <span>Salvar Alterações</span>
-                </>
-              )}
-            </button>
-          </div>
-
+        <div className="flex items-center gap-3 mb-6">
+          <p className="text-[10px] font-semibold tracking-[0.18em] uppercase whitespace-nowrap" style={{ color: "#a855f7" }}>
+            CONFIGURAÇÃO
+          </p>
+          <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.05)" }} />
         </div>
 
-      </div>
+        {/* Main Panel */}
+        <div className="flex flex-col rounded-3xl overflow-hidden mb-8"
+          style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)" }}>
 
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-4px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-      `}</style>
+          <div className="flex items-center gap-3.5 p-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)", color: "#a855f7" }}>
+              <FaTrash size={15} />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-white">Filtro Anti-Link</h2>
+              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+                Bloqueia links maliciosos e spam no servidor
+              </p>
+            </div>
+          </div>
+
+          <div className="p-5 space-y-6">
+            {/* Toggle Principal */}
+            <div className="flex items-center justify-between py-3">
+              <div>
+                <h3 className="text-base font-semibold text-white">Ativar Proteção</h3>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Remove automaticamente mensagens contendo links externos
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={enabled} 
+                  onChange={(e) => setEnabled(e.target.checked)} 
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-zinc-800 border border-zinc-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#a855f7] peer-checked:border-[#a855f7]" />
+              </label>
+            </div>
+
+            <div className={`space-y-6 transition-all duration-300 ${enabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+
+              {/* Exceptions */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium text-sm text-white">Ignorar Mídias</div>
+                      <p className="text-[11px] text-zinc-400 mt-1 leading-tight">Permite links de imagens, GIFs e vídeos</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer flex-shrink-0 mt-0.5">
+                      <input 
+                        type="checkbox" 
+                        checked={allowMedia} 
+                        disabled={!enabled}
+                        onChange={(e) => setAllowMedia(e.target.checked)} 
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-zinc-800 border border-zinc-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#a855f7]" />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium text-sm text-white">Ignorar Redes Sociais</div>
+                      <p className="text-[11px] text-zinc-400 mt-1 leading-tight">Permite links do Twitter, Instagram, TikTok, etc</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer flex-shrink-0 mt-0.5">
+                      <input 
+                        type="checkbox" 
+                        checked={allowSocials} 
+                        disabled={!enabled}
+                        onChange={(e) => setAllowSocials(e.target.checked)} 
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-zinc-800 border border-zinc-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#a855f7]" />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Whitelist Section */}
+              <div className="rounded-2xl" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="p-5">
+                  <p className="text-xs font-semibold tracking-widest uppercase mb-3 text-zinc-400">DOMÍNIOS PERMITIDOS</p>
+                  
+                  <form onSubmit={handleAddDomain} className="flex gap-2 mb-5">
+                    <input 
+                      type="text" 
+                      value={newDomain}
+                      disabled={!enabled}
+                      onChange={(e) => setNewDomain(e.target.value)}
+                      placeholder="ex: github.com"
+                      className="flex-1 px-4 py-3 bg-zinc-900/70 border border-zinc-700 rounded-2xl text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-[#a855f7]/50"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!enabled || !newDomain.trim()}
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-40"
+                      style={{ background: "rgba(168,85,247,0.1)", color: "#a855f7", border: "1px solid rgba(168,85,247,0.2)" }}
+                    >
+                      <FaPlus size={14} />
+                    </button>
+                  </form>
+
+                  {/* Sugestões */}
+                  <div className="mb-5">
+                    <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Sugestões recomendadas</p>
+                    <div className="flex flex-wrap gap-2">
+                      {domainSuggestions.map((domain) => (
+                        <button
+                          key={domain}
+                          onClick={() => handleAddSuggestion(domain)}
+                          disabled={allowedDomains.includes(domain) || !enabled}
+                          className="px-3 py-1.5 text-xs font-mono rounded-xl border transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                          style={{
+                            background: allowedDomains.includes(domain) ? "rgba(16,185,129,0.1)" : "rgba(168,85,247,0.08)",
+                            borderColor: allowedDomains.includes(domain) ? "#10b981" : "rgba(168,85,247,0.3)",
+                            color: allowedDomains.includes(domain) ? "#10b981" : "#c4b5fd"
+                          }}
+                        >
+                          {domain}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Lista atual */}
+                  <div className="max-h-[200px] overflow-y-auto pr-1 space-y-2">
+                    {allowedDomains.length === 0 ? (
+                      <div className="py-8 text-center rounded-xl" style={{ background: "rgba(255,255,255,0.015)", border: "1px dashed rgba(255,255,255,0.08)" }}>
+                        <p className="text-xs text-zinc-500">Nenhum domínio adicionado ainda</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {allowedDomains.map((domain) => (
+                          <DomainTag 
+                            key={domain} 
+                            domain={domain} 
+                            onRemove={() => handleRemoveDomain(domain)} 
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* action bar */}
+        <div className="flex items-center justify-end gap-3 pt-5"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <button
+            onClick={() => router.push(`/server/${guildId}`)}
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.09)",
+              color: "rgba(255,255,255,0.45)",
+            }}
+          >
+            Cancelar
+          </button>
+
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: "linear-gradient(135deg,#a855f7,#7c3aed)",
+              color: "#1e1b4b",
+              boxShadow: "0 0 20px rgba(168,85,247,0.3)",
+            }}
+          >
+            {saving ? <FaSpinner size={13} className="animate-spin" /> : <FaSave size={13} />}
+            {saving ? "Salvando…" : "Salvar Alterações"}
+          </button>
+        </div>
+
+        <p className="text-center text-xs mt-10" style={{ color: "rgba(255,255,255,0.12)", letterSpacing: "0.08em" }}>
+          O bot precisa de permissão "Gerenciar Mensagens" para funcionar corretamente.
+        </p>
+      </div>
     </div>
   );
 }
