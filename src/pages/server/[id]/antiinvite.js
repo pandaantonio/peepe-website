@@ -6,7 +6,6 @@ import Navbar from '@/components/Navbar';
 import { 
   FaArrowLeft, 
   FaDiscord,
-  FaUserShield, 
   FaPlus, 
   FaTrash, 
   FaSave, 
@@ -141,12 +140,12 @@ export default function AntiInvitePage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-900 to-green-900">
+      <div className="min-h-screen bg-[#0B0F17] text-slate-100">
         <Navbar />
-        <div className="flex items-center justify-center min-h-screen pt-20">
+        <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-green-300">Carregando módulo Anti-Invite...</p>
+            <div className="w-12 h-12 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-slate-400 text-sm tracking-wide">Buscando definições...</p>
           </div>
         </div>
       </div>
@@ -155,18 +154,18 @@ export default function AntiInvitePage() {
 
   if (error && !guild) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-900 to-green-900">
+      <div className="min-h-screen bg-[#0B0F17] text-slate-100">
         <Navbar />
-        <div className="flex items-center justify-center min-h-screen pt-20 px-4">
-          <div className="text-center max-w-md">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 mb-4">
-              <FaExclamationTriangle size={32} className="text-red-400" />
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <div className="bg-slate-900/60 border border-slate-800 backdrop-blur-xl rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 mb-4">
+              <FaExclamationTriangle size={24} className="text-red-400" />
             </div>
-            <h2 className="text-xl font-bold text-green-300 mb-2">Erro</h2>
-            <p className="text-green-400 mb-6">{error}</p>
+            <h2 className="text-xl font-bold text-white mb-2">Erro Operacional</h2>
+            <p className="text-slate-400 text-sm mb-6">{error}</p>
             <button
               onClick={() => router.push(`/server/${guildId}`)}
-              className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+              className="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700/60 text-slate-200 rounded-xl font-semibold text-sm transition-all duration-200"
             >
               Voltar ao Dashboard
             </button>
@@ -179,88 +178,94 @@ export default function AntiInvitePage() {
   const iconUrl = getIconUrl();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-900 to-green-900">
+    <div className="min-h-screen bg-[#0B0F17] text-slate-100 relative overflow-hidden">
       <Navbar />
+
+      {/* Glow de fundo (Assinatura azul/indigo para o módulo de segurança/convites) */}
+      <div className="absolute top-0 right-1/4 w-[500px] h-[250px] bg-blue-500/5 blur-[100px] rounded-full pointer-events-none" />
       
-      <div className="relative max-w-4xl mx-auto px-6 py-8 pt-28">
+      <div className="relative max-w-4xl mx-auto px-6 pt-36 pb-24 z-10">
         
         {/* Botão Voltar */}
         <button
           onClick={() => router.push(`/server/${guildId}`)}
-          className="group flex items-center gap-2 px-4 py-2 mb-8 rounded-lg bg-black/50 border border-green-500/30 hover:bg-green-500/10 transition-all duration-300 text-green-400 hover:text-green-300"
+          className="group inline-flex items-center gap-2.5 px-4 py-2 mb-8 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 hover:bg-slate-900 text-slate-400 hover:text-slate-200 transition-all duration-200 text-xs font-bold tracking-wide"
         >
-          <FaArrowLeft size={14} />
-          <span className="text-sm font-medium">Voltar ao Dashboard</span>
+          <FaArrowLeft size={11} className="group-hover:-translate-x-0.5 transition-transform" />
+          <span>Voltar ao Dashboard</span>
         </button>
 
-        {/* Header do Servidor */}
-        <div className="bg-black/50 backdrop-blur-sm border border-green-500/30 rounded-2xl p-6 mb-8">
-          <div className="flex items-center gap-4">
-            {iconUrl ? (
-              <img
-                src={iconUrl}
-                alt={guild?.name}
-                className="w-16 h-16 rounded-2xl object-cover ring-2 ring-green-500/30"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-700 flex items-center justify-center">
-                <FaDiscord size={32} className="text-white" />
-              </div>
-            )}
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-green-300 mb-1">Proteção Anti-Invite</h1>
-              <p className="text-green-400 text-sm">
-                Evite a divulgação externa bloqueando convites em {guild?.name}
-              </p>
+        {/* Mini Banner do Servidor */}
+        <div className="bg-slate-900/30 border border-slate-800/80 backdrop-blur-md rounded-2xl p-5 mb-10 flex items-center gap-4 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-500 to-indigo-600" />
+          {iconUrl ? (
+            <img
+              src={iconUrl}
+              alt={guild?.name}
+              className="w-12 h-12 rounded-xl object-cover ring-2 ring-slate-800 shadow-md"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400">
+              <FaDiscord size={22} />
             </div>
+          )}
+          <div>
+            <h1 className="text-xl font-black tracking-tight text-white mb-0.5">Proteção Anti-Invite</h1>
+            <p className="text-slate-400 text-xs font-medium">
+              Evite a divulgação externa bloqueando convites em <span className="text-slate-200">{guild?.name}</span>
+            </p>
           </div>
         </div>
 
         {/* Mensagens de feedback */}
         {success && (
-          <div className="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/30 flex items-center gap-3 animate-fade-in">
-            <FaCheckCircle className="text-green-400" size={20} />
-            <span className="text-green-400">{success}</span>
+          <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3 animate-fade-in shadow-lg">
+            <FaCheckCircle className="text-emerald-400" size={16} />
+            <span className="text-emerald-400 text-sm font-medium">{success}</span>
           </div>
         )}
         
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3 animate-fade-in">
-            <FaExclamationTriangle className="text-red-400" size={20} />
-            <span className="text-red-400">{error}</span>
+          <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center gap-3 animate-fade-in shadow-lg">
+            <FaExclamationTriangle className="text-rose-400" size={16} />
+            <span className="text-rose-400 text-sm font-medium">{error}</span>
           </div>
         )}
 
-        {/* Caixa de Configurações Principais */}
-        <div className="space-y-6">
+        {/* Grid de Configurações Principais */}
+        <div className="space-y-5">
           
           {/* Toggle Geral */}
-          <div className="bg-black/50 backdrop-blur-sm border border-green-500/30 rounded-2xl p-6 flex items-center justify-between">
+          <div className="bg-slate-900/40 border border-slate-800/80 backdrop-blur-md rounded-2xl p-5 flex items-center justify-between gap-6">
             <div>
-              <h3 className="text-lg font-bold text-green-300">Ativar Anti-Invite</h3>
-              <p className="text-green-400 text-sm max-w-md">Bloqueia o envio de links de convites externos do Discord no chat.</p>
+              <h3 className="text-base font-bold text-slate-200">Ativar Anti-Invite</h3>
+              <p className="text-slate-400 text-xs font-medium leading-relaxed max-w-md mt-0.5">
+                Bloqueia o envio de links de convites externos do Discord no chat para evitar evasão de membros.
+              </p>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
               <input 
                 type="checkbox" 
                 checked={enabled} 
                 onChange={(e) => setEnabled(e.target.checked)} 
                 className="sr-only peer"
               />
-              <div className="w-14 h-7 bg-black/40 border border-green-500/30 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-green-700 peer-checked:after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500" />
+              <div className="w-12 h-6 bg-slate-950 border border-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-slate-600 peer-checked:after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-indigo-600 peer-checked:border-blue-400/20" />
             </label>
           </div>
 
-          {/* Subopções (Ajustado opacidade dinamicamente com base no 'enabled') */}
-          <div className={`space-y-6 transition-all duration-300 ${enabled ? 'opacity-100 pointer-events-auto' : 'opacity-40 pointer-events-none'}`}>
+          {/* Subopções Condicionais */}
+          <div className={`space-y-5 transition-all duration-300 ${enabled ? 'opacity-100 pointer-events-auto' : 'opacity-35 pointer-events-none'}`}>
             
             {/* Permitir convites do próprio servidor */}
-            <div className="bg-black/50 backdrop-blur-sm border border-green-500/30 rounded-2xl p-6 flex items-center justify-between">
+            <div className="bg-slate-900/40 border border-slate-800/80 backdrop-blur-md rounded-2xl p-5 flex items-center justify-between gap-6">
               <div>
-                <h4 className="font-bold text-green-300 text-md">Permitir convites deste Servidor</h4>
-                <p className="text-green-400/80 text-sm max-w-md">O bot vai validar se o convite enviado pertence a este servidor para poder liberá-lo.</p>
+                <h4 className="font-bold text-slate-200 text-sm">Permitir convites deste Servidor</h4>
+                <p className="text-slate-400 text-xs font-medium leading-relaxed max-w-md mt-0.5">
+                  O bot vai validar se o convite enviado pertence originalmente a este servidor para poder liberá-lo no chat.
+                </p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
+              <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
                 <input 
                   type="checkbox" 
                   checked={allowOwnInvites} 
@@ -268,50 +273,52 @@ export default function AntiInvitePage() {
                   onChange={(e) => setAllowOwnInvites(e.target.checked)} 
                   className="sr-only peer"
                 />
-                <div className="w-14 h-7 bg-black/40 border border-green-500/20 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-green-700 peer-checked:after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500" />
+                <div className="w-10 h-5 bg-slate-950 border border-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-slate-700 peer-checked:after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-500 peer-checked:border-blue-400/20" />
               </label>
             </div>
 
             {/* Whitelist de Convites */}
-            <div className="bg-black/50 backdrop-blur-sm border border-green-500/30 rounded-2xl p-6">
-              <h3 className="text-lg font-bold text-green-300 mb-1">Convites Permitidos (Exceções)</h3>
-              <p className="text-green-400 text-sm mb-4">Adicione códigos ou links de servidores parceiros que são permitidos dentro do chat.</p>
+            <div className="bg-slate-900/40 border border-slate-800/80 backdrop-blur-md rounded-2xl p-5">
+              <h3 className="text-base font-bold text-slate-200">Convites Permitidos (Exceções)</h3>
+              <p className="text-slate-400 text-xs font-medium mb-4 mt-0.5">
+                Adicione códigos ou links de servidores parceiros que possuem passe livre para divulgação dentro do chat.
+              </p>
               
-              <form onSubmit={handleAddInvite} className="flex gap-3 mb-6">
+              <form onSubmit={handleAddInvite} className="flex gap-2 mb-4">
                 <input 
                   type="text" 
                   value={newInvite}
                   disabled={!enabled}
                   onChange={(e) => setNewInvite(e.target.value)}
                   placeholder="Ex: discord.gg/exemplo ou apenas o código"
-                  className="flex-1 px-4 py-2.5 bg-black/50 border border-green-500/30 rounded-lg text-green-300 placeholder-green-700 focus:outline-none focus:border-green-500/50 text-sm transition-all"
+                  className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 placeholder-slate-600 focus:outline-none focus:border-blue-500/40 text-xs font-medium transition-all"
                 />
                 <button
                   type="submit"
                   disabled={!enabled}
-                  className="px-4 rounded-lg bg-green-500/10 border border-green-500/30 hover:bg-green-500/20 text-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="px-4 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 rounded-xl transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
                 >
-                  <FaPlus size={14} />
+                  <FaPlus size={11} />
                 </button>
               </form>
 
               {/* Lista de tags inseridas */}
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-1">
                 {allowedInvites.length === 0 ? (
-                  <p className="text-green-600/50 text-xs italic">Nenhum convite externo liberado.</p>
+                  <p className="text-slate-600 text-xs font-medium italic py-1">Nenhum convite externo liberado.</p>
                 ) : (
                   allowedInvites.map((code) => (
                     <div 
                       key={code}
-                      className="inline-flex items-center gap-2 bg-black/40 border border-green-500/30 text-green-300 text-xs px-3 py-1.5 rounded-lg"
+                      className="inline-flex items-center gap-2 bg-slate-950/40 border border-slate-800/80 text-slate-300 text-xs px-3 py-1.5 rounded-xl"
                     >
-                      <span className="font-mono">discord.gg/{code}</span>
+                      <span className="font-mono text-[11px] font-medium">discord.gg/{code}</span>
                       <button 
                         type="button"
                         onClick={() => handleRemoveInvite(code)}
-                        className="p-1 text-green-500 hover:text-red-400 transition-colors"
+                        className="p-0.5 text-slate-500 hover:text-rose-400 transition-colors"
                       >
-                        <FaTrash size={10} />
+                        <FaTrash size={9} />
                       </button>
                     </div>
                   ))
@@ -321,28 +328,28 @@ export default function AntiInvitePage() {
 
           </div>
 
-          {/* Botões Inferiores de Ação */}
-          <div className="mt-8 flex justify-end gap-3 border-t border-green-500/20 pt-6">
+          {/* Menu Inferior de Ações Gerais */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-900">
             <button
               onClick={() => router.push(`/server/${guildId}`)}
-              className="px-6 py-2.5 rounded-lg bg-black/50 border border-green-500/30 hover:bg-green-500/10 text-green-400 transition-colors"
+              className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 text-xs font-bold transition-colors"
             >
-              Cancelar
+              Cancelar descarte
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white font-bold text-xs tracking-wide transition-all duration-200 flex items-center gap-2 shadow-md shadow-blue-950/30 disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5"
             >
               {saving ? (
                 <>
-                  <FaSpinner className="animate-spin" size={16} />
-                  <span>Salvando...</span>
+                  <FaSpinner className="animate-spin" size={13} />
+                  <span>Registrando...</span>
                 </>
               ) : (
                 <>
-                  <FaSave size={16} />
-                  <span>Salvar Configurações</span>
+                  <FaSave size={13} />
+                  <span>Salvar Alterações</span>
                 </>
               )}
             </button>
@@ -356,7 +363,7 @@ export default function AntiInvitePage() {
         @keyframes fade-in {
           from {
             opacity: 0;
-            transform: translateY(-10px);
+            transform: translateY(-4px);
           }
           to {
             opacity: 1;
@@ -364,7 +371,7 @@ export default function AntiInvitePage() {
           }
         }
         .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
+          animation: fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
       `}</style>
     </div>

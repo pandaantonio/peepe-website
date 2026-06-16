@@ -9,10 +9,8 @@ import {
   FaDiscord, 
   FaUserPlus, 
   FaShieldAlt, 
-  FaRobot, 
   FaCog,
   FaChevronRight,
-  FaUsers,
   FaLink,
   FaUserShield
 } from 'react-icons/fa';
@@ -76,12 +74,12 @@ export default function GuildDashboard() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-900 to-green-900">
+      <div className="min-h-screen bg-[#0B0F17] text-slate-100">
         <Navbar />
-        <div className="flex items-center justify-center min-h-screen pt-20">
+        <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-green-300">Carregando informações do servidor...</p>
+            <div className="w-12 h-12 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-slate-400 text-sm tracking-wide">Carregando painel do servidor...</p>
           </div>
         </div>
       </div>
@@ -90,20 +88,20 @@ export default function GuildDashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-900 to-green-900">
+      <div className="min-h-screen bg-[#0B0F17] text-slate-100">
         <Navbar />
-        <div className="flex items-center justify-center min-h-screen pt-20 px-4">
-          <div className="text-center max-w-md">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 mb-4">
-              <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <div className="bg-slate-900/60 border border-slate-800 backdrop-blur-xl rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 mb-4">
+              <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-green-300 mb-2">Erro</h2>
-            <p className="text-green-400 mb-6">{error}</p>
+            <h2 className="text-xl font-bold text-white mb-2">Erro Operacional</h2>
+            <p className="text-slate-400 text-sm mb-6 leading-relaxed">{error}</p>
             <button
               onClick={handleBackToServers}
-              className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+              className="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700/60 text-slate-200 rounded-xl font-semibold text-sm transition-all duration-200"
             >
               Voltar aos Servidores
             </button>
@@ -115,20 +113,20 @@ export default function GuildDashboard() {
 
   if (!guild) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-900 to-green-900">
+      <div className="min-h-screen bg-[#0B0F17] text-slate-100">
         <Navbar />
-        <div className="flex items-center justify-center min-h-screen pt-20 px-4">
-          <div className="text-center max-w-md">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-yellow-500/10 mb-4">
-              <FaDiscord size={32} className="text-yellow-400" />
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <div className="bg-slate-900/60 border border-slate-800 backdrop-blur-xl rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-4">
+              <FaDiscord size={24} className="text-amber-400" />
             </div>
-            <h2 className="text-xl font-bold text-green-300 mb-2">Servidor não encontrado</h2>
-            <p className="text-green-400 mb-6">
-              O servidor que você está procurando não existe ou você não tem acesso a ele.
+            <h2 className="text-xl font-bold text-white mb-2">Servidor não localizado</h2>
+            <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+              A guilda especificada pode ter removido o bot ou sua conta perdeu os privilégios administrativos.
             </p>
             <button
               onClick={handleBackToServers}
-              className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+              className="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700/60 text-slate-200 rounded-xl font-semibold text-sm transition-all duration-200"
             >
               Voltar aos Servidores
             </button>
@@ -140,235 +138,157 @@ export default function GuildDashboard() {
 
   const iconUrl = getIconUrl();
 
-  // Cards de configuração
+  // Exibindo apenas módulos ativos (Removidos os "Em breve")
   const configCards = [
     {
       id: 'autorole',
       title: 'Auto Role',
-      description: 'Configure cargos automáticos para novos membros entrarem no servidor.',
-      icon: <FaUserPlus size={28} />,
+      description: 'Configure cargos automáticos para novos membros assim que entrarem no servidor.',
+      icon: <FaUserPlus size={22} />,
       color: 'emerald',
-      path: `/server/${guild.id}/autorole`,
-      enabled: true
+      path: `/server/${guild.id}/autorole`
     },
     {
       id: 'antilink',
       title: 'Anti-Link',
-      description: 'Bloqueie links maliciosos ou não autorizados enviados nos canais de texto.',
-      icon: <FaLink size={26} />,
+      description: 'Bloqueie links maliciosos ou não autorizados enviados nos canais de texto públicos.',
+      icon: <FaLink size={20} />,
       color: 'purple',
-      path: `/server/${guild.id}/antilink`,
-      enabled: true
+      path: `/server/${guild.id}/antilink`
     },
     {
       id: 'antiinvite',
       title: 'Anti-Invite',
-      description: 'Evite a divulgação de outros servidores do Discord bloqueando convites externos.',
-      icon: <FaUserShield size={26} />,
+      description: 'Evite a evasão de membros bloqueando convites de outros servidores do Discord.',
+      icon: <FaUserShield size={20} />,
       color: 'red',
-      path: `/server/${guild.id}/antiinvite`,
-      enabled: true
-    },
-    {
-      id: 'moderation',
-      title: 'Moderação',
-      description: 'Configure sistemas de moderação como warns, mutas e bans.',
-      icon: <FaShieldAlt size={28} />,
-      color: 'red',
-      path: `/server/${guild.id}/moderation`,
-      enabled: false
-    },
-    {
-      id: 'welcome',
-      title: 'Mensagens de Boas-Vindas',
-      description: 'Personalize mensagens de entrada e saída de membros.',
-      icon: <FaUsers size={28} />,
-      color: 'blue',
-      path: `/server/${guild.id}/welcome`,
-      enabled: false
-    },
-    {
-      id: 'bot-config',
-      title: 'Configurações do Bot',
-      description: 'Configure prefixo, logs e outras preferências do bot.',
-      icon: <FaRobot size={28} />,
-      color: 'purple',
-      path: `/server/${guild.id}/config`,
-      enabled: false
-    },
-    {
-      id: 'general',
-      title: 'Configurações Gerais',
-      description: 'Configurações gerais do servidor e integrações.',
-      icon: <FaCog size={28} />,
-      color: 'gray',
-      path: `/server/${guild.id}/general`,
-      enabled: false
+      path: `/server/${guild.id}/antiinvite`
     }
   ];
 
   const colorClasses = {
     emerald: {
-      border: "hover:border-green-500/50",
-      bg: "group-hover:bg-green-500/5",
-      text: "text-green-400",
-      button: "bg-green-600 hover:bg-green-700",
-      badge: "bg-green-500/10 border-green-500/20 text-green-400"
+      border: "hover:border-emerald-500/30",
+      bg: "group-hover:bg-emerald-500/[0.02]",
+      text: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+      button: "bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-950/40"
     },
     red: {
-      border: "hover:border-red-500/50",
-      bg: "group-hover:bg-red-500/5",
-      text: "text-red-400",
-      button: "bg-red-600 hover:bg-red-700",
-      badge: "bg-red-500/10 border-red-500/20 text-red-400"
-    },
-    blue: {
-      border: "hover:border-blue-500/50",
-      bg: "group-hover:bg-blue-500/5",
-      text: "text-blue-400",
-      button: "bg-blue-600 hover:bg-blue-700",
-      badge: "bg-blue-500/10 border-blue-500/20 text-blue-400"
+      border: "hover:border-rose-500/30",
+      bg: "group-hover:bg-rose-500/[0.02]",
+      text: "text-rose-400 bg-rose-500/10 border-rose-500/20",
+      button: "bg-rose-500 hover:bg-rose-400 text-white shadow-rose-950/40"
     },
     purple: {
-      border: "hover:border-purple-500/50",
-      bg: "group-hover:bg-purple-500/5",
-      text: "text-purple-400",
-      button: "bg-purple-600 hover:bg-purple-700",
-      badge: "bg-purple-500/10 border-purple-500/20 text-purple-400"
-    },
-    gray: {
-      border: "hover:border-gray-500/50",
-      bg: "group-hover:bg-gray-500/5",
-      text: "text-gray-400",
-      button: "bg-gray-600 hover:bg-gray-700",
-      badge: "bg-gray-500/10 border-gray-500/20 text-gray-400"
+      border: "hover:border-fuchsia-500/30",
+      bg: "group-hover:bg-fuchsia-500/[0.02]",
+      text: "text-fuchsia-400 bg-fuchsia-500/10 border-fuchsia-500/20",
+      button: "bg-fuchsia-500 hover:bg-fuchsia-400 text-white shadow-fuchsia-950/40"
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-900 to-green-900">
+    <div className="min-h-screen bg-[#0B0F17] text-slate-100 relative overflow-hidden">
       <Navbar />
+
+      {/* Glow de fundo */}
+      <div className="absolute top-0 left-1/4 w-[500px] h-[250px] bg-emerald-500/5 blur-[100px] rounded-full pointer-events-none" />
       
-      <div className="relative max-w-7xl mx-auto px-6 py-8 pt-28">
+      <div className="relative max-w-7xl mx-auto px-6 pt-36 pb-24 z-10">
+        
         {/* Botão Voltar */}
         <button
           onClick={handleBackToServers}
-          className="group flex items-center gap-2 px-4 py-2 mb-8 rounded-lg bg-black/50 border border-green-500/30 hover:bg-green-500/10 transition-all duration-300 text-green-400 hover:text-green-300"
+          className="group inline-flex items-center gap-2.5 px-4 py-2 mb-8 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 hover:bg-slate-900 text-slate-400 hover:text-slate-200 transition-all duration-200 text-xs font-bold tracking-wide"
         >
-          <FaArrowLeft size={14} />
-          <span className="text-sm font-medium">Voltar aos Servidores</span>
+          <FaArrowLeft size={11} className="group-hover:-translate-x-0.5 transition-transform" />
+          <span>Voltar aos Servidores</span>
         </button>
 
-        {/* Header do Servidor */}
-        <div className="bg-black/50 backdrop-blur-sm border border-green-500/30 rounded-2xl p-6 mb-8">
-          <div className="flex items-center gap-4">
-            {iconUrl ? (
-              <img
-                src={iconUrl}
-                alt={guild.name}
-                className="w-20 h-20 rounded-2xl object-cover ring-2 ring-green-500/30"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-700 flex items-center justify-center">
-                <FaDiscord size={40} className="text-white" />
-              </div>
-            )}
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-green-300 mb-1">{guild.name}</h1>
-              <div className="flex flex-wrap gap-2">
-                <span className="text-xs px-2 py-1 rounded-full bg-white/5 text-green-400 font-mono">
-                  ID: {guild.id}
+        {/* Banner/Header do Servidor */}
+        <div className="bg-slate-900/30 border border-slate-800/80 backdrop-blur-md rounded-2xl p-6 mb-12 flex flex-col sm:flex-row items-center gap-5 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-emerald-500 to-green-600" />
+          
+          {iconUrl ? (
+            <img
+              src={iconUrl}
+              alt={guild.name}
+              className="w-16 h-16 rounded-xl object-cover ring-4 ring-slate-900 shadow-md"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400">
+              <FaDiscord size={28} />
+            </div>
+          )}
+
+          <div className="flex-1 text-center sm:text-left">
+            <h1 className="text-2xl font-black tracking-tight text-white mb-2">{guild.name}</h1>
+            <div className="flex flex-wrap justify-center sm:justify-start items-center gap-2">
+              <span className="text-[10px] font-mono font-semibold px-2 py-1 bg-slate-900 rounded-lg border border-slate-800 text-slate-500">
+                ID: {guild.id}
+              </span>
+              {guild.owner && (
+                <span className="text-[10px] font-bold px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                  Proprietário
                 </span>
-                {guild.owner && (
-                  <span className="text-xs px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-400">
-                    Dono
-                  </span>
-                )}
-                <span className="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-400">
-                  Administrador
-                </span>
-              </div>
+              )}
+              <span className="text-[10px] font-bold px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                Acesso Master
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Grid de Configurações */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-green-300 mb-4 flex items-center gap-2">
-            <FaCog size={18} className="text-green-400" />
-            Módulos Disponíveis
-          </h2>
+        {/* Seção de Módulos */}
+        <div>
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-7 h-7 bg-slate-900 rounded-lg border border-slate-800 flex items-center justify-center text-emerald-400">
+              <FaCog size={13} />
+            </div>
+            <h2 className="text-lg font-extrabold tracking-tight text-white">
+              Sistemas Operacionais
+            </h2>
+          </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {configCards.map((card) => {
               const colors = colorClasses[card.color];
-              
-              if (!card.enabled) {
-                return (
-                  <div
-                    key={card.id}
-                    className="relative bg-black/50 backdrop-blur-sm border border-green-500/20 rounded-2xl overflow-hidden opacity-60"
-                  >
-                    <div className="relative p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className={colors.text}>
-                          {card.icon}
-                        </div>
-                        <div className="px-2 py-1 rounded-md bg-gray-500/10 border border-gray-500/20">
-                          <span className="text-[10px] font-bold text-gray-400 tracking-wider">EM BREVE</span>
-                        </div>
-                      </div>
-
-                      <h3 className="text-xl font-bold text-green-300 mb-2">
-                        {card.title}
-                      </h3>
-                      
-                      <p className="text-green-400 text-sm leading-relaxed mb-5">
-                        {card.description}
-                      </p>
-
-                      <div className="flex items-center justify-between pt-3 border-t border-green-500/20">
-                        <span className="text-xs text-green-500/60 font-mono">Em desenvolvimento</span>
-                        <div className="w-9 h-9 rounded-full bg-gray-500/20 flex items-center justify-center">
-                          <FaChevronRight size={14} className="text-gray-400" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
               
               return (
                 <Link
                   key={card.id}
                   href={card.path}
-                  className="group cursor-pointer"
+                  className="group flex"
                 >
-                  <div className={`relative bg-black/50 backdrop-blur-sm border border-green-500/30 rounded-2xl overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${colors.border}`}>
-                    <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${colors.bg}`} />
+                  <div className={`w-full bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl flex flex-col justify-between relative ${colors.border}`}>
+                    <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${colors.bg}`} />
                     
-                    <div className="relative p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className={`${colors.text} transition-all duration-300 group-hover:scale-110 group-hover:rotate-3`}>
-                          {card.icon}
+                    <div className="p-5 relative flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className={`w-9 h-9 rounded-xl border flex items-center justify-center ${colors.text}`}>
+                            {card.icon}
+                          </div>
+                          <span className="text-[9px] font-black tracking-widest text-emerald-500 bg-emerald-500/5 px-2 py-1 rounded border border-emerald-500/10 uppercase">
+                            Ativo
+                          </span>
                         </div>
-                        <div className={`px-2 py-1 rounded-md ${colors.badge}`}>
-                          <span className="text-[10px] font-bold tracking-wider">DISPONÍVEL</span>
-                        </div>
+
+                        <h3 className="text-lg font-bold text-slate-200 mb-2 group-hover:text-white transition-colors">
+                          {card.title}
+                        </h3>
+                        
+                        <p className="text-slate-400 text-xs leading-relaxed mb-6">
+                          {card.description}
+                        </p>
                       </div>
 
-                      <h3 className="text-xl font-bold text-green-300 mb-2 group-hover:translate-x-1 transition-transform duration-300">
-                        {card.title}
-                      </h3>
-                      
-                      <p className="text-green-400 text-sm leading-relaxed mb-5">
-                        {card.description}
-                      </p>
-
-                      <div className="flex items-center justify-between pt-3 border-t border-green-500/20">
-                        <span className="text-xs text-green-500/60 font-mono">Clique para configurar</span>
-                        <div className={`w-9 h-9 rounded-full ${colors.button} flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:translate-x-1 shadow-lg`}>
-                          <FaChevronRight size={14} className="text-white" />
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-800/60 mt-auto">
+                        <span className="text-[11px] text-slate-500 group-hover:text-slate-400 font-medium transition-colors">
+                          Abrir painel de controle
+                        </span>
+                        <div className={`w-8 h-8 rounded-lg ${colors.button} flex items-center justify-center transition-all duration-200 shadow-md`}>
+                          <FaChevronRight size={11} />
                         </div>
                       </div>
                     </div>
@@ -380,9 +300,9 @@ export default function GuildDashboard() {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 pt-8 border-t border-green-500/20 text-center">
-          <p className="text-green-500/60 text-xs">
-            Gerencie as configurações do servidor {guild.name}
+        <div className="mt-16 pt-6 border-t border-slate-900 text-center">
+          <p className="text-slate-600 text-[11px] font-medium tracking-wide uppercase">
+            Sincronizado com a API do Discord
           </p>
         </div>
       </div>
